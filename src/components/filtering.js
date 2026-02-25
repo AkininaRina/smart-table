@@ -43,6 +43,24 @@ export function initFiltering(elements, indexes) {
       ],
     };
 
-    return data.filter(row => compare(row, state));
+    // return data.filter(row => compare(row, state));
+    const totalFrom =
+      state.totalFrom === "" || state.totalFrom == null
+        ? undefined
+        : Number(state.totalFrom);
+    const totalTo =
+      state.totalTo === "" || state.totalTo == null
+        ? undefined
+        : Number(state.totalTo);
+
+    const nextState = {
+      ...state,
+      total: [totalFrom, totalTo],
+    };
+
+    delete nextState.totalFrom;
+    delete nextState.totalTo;
+
+    return data.filter((row) => compare(row, nextState));
   };
 }
