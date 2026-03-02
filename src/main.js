@@ -9,8 +9,8 @@ import { initTable } from "./components/table.js";
 // Их можно оставить импортами, но не использовать:
 import { initPagination } from "./components/pagination.js";
 // import { initSorting } from "./components/sorting.js";
-// import { initFiltering } from "./components/filtering.js";
-// import { initSearching } from "./components/searching.js";
+import { initFiltering } from "./components/filtering.js";
+import { initSearching } from "./components/searching.js";
 
 const api = initData();
 
@@ -23,6 +23,9 @@ const sampleTable = initTable(
   },
   render
 );
+const applySearching = initSearching("search");
+
+const { applyFiltering, updateIndexes } = initFiltering(sampleTable.filter.elements);
 
 const { applyPagination, updatePagination } = initPagination(
   sampleTable.pagination.elements,
@@ -35,6 +38,7 @@ const { applyPagination, updatePagination } = initPagination(
     return el;
   }
 );
+
 
 /**
  * Сбор и обработка полей из таблицы
@@ -60,6 +64,8 @@ async function render(action) {
   const state = collectState();
 
   let query = {};
+  query = applySearching(query, state, action);
+  query = applyFiltering(query, state, action);
   query = applyPagination(query, state, action);
 
   const { total, items } = await api.getRecords(query);
@@ -74,7 +80,11 @@ async function render(action) {
  * потом можно делать рендер таблицы
  */
 async function init() {
-  await api.getIndexes();
+  const indexes = await api.getIndexes();
+
+  updateIndexes(sampleTable.filter.elements, {
+    searchBySeller: indexes.sellers,
+  });
 }
 
 const appRoot = document.querySelector("#app");

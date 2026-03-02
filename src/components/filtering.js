@@ -1,66 +1,58 @@
-import { createComparison, defaultRules } from "../lib/compare.js";
+export function initFiltering(elements) {
+  
+  const updateIndexes = (elements, indexes) => {
+    Object.keys(indexes).forEach((elementName) => {
+      const el = elements[elementName];
+      if (!el) return;
 
-// @todo: #4.3 — настроить компаратор
-const compare = createComparison(defaultRules);
-
-export function initFiltering(elements, indexes) {
-  // @todo: #4.1 — заполнить выпадающие списки опциями
-
-  Object.keys(indexes).forEach((elementName) => {
-    elements[elementName].append(
-      ...Object.values(indexes[elementName]).map((name) => {
+      Object.values(indexes[elementName]).forEach((name) => {
         const option = document.createElement("option");
-        option.value = name;
         option.textContent = name;
-        return option;
-      }),
-    );
-  });
+        option.value = name;
+        el.append(option);
+      });
+    });
+  };
 
-  return (data, state, action) => {
-    // @todo: #4.2 — обработать очистку поля
+
+  const applyFiltering = (query, state, action) => {
+
     if (action && action.name === "clear") {
-      const wrapper = action.parentElement;
-      const input = wrapper.querySelector("input");
+      Object.keys(elements).forEach((key) => {
+        const el = elements[key];
+        if (!el) return;
 
-      if (input) {
-        input.value = "";
-      }
+        if (el.tagName === "INPUT") el.value = "";
+        if (el.tagName === "SELECT") el.value = "";
+      });
 
-      const field = action.dataset.field;
-      if (field && field in state) {
-        state[field] = "";
-      }
+
+      return Object.assign({}, query, { page: 1 });
     }
-    // @todo: #4.5 — отфильтровать данные используя компаратор
-    const filters = {
-      date: state.date,
-      customer: state.customer,
-      seller: state.seller,
-      total: [
-        state.totalFrom ? Number(state.totalFrom) : null,
-        state.totalTo ? Number(state.totalTo) : null,
-      ],
-    };
 
-    // return data.filter(row => compare(row, state));
-    const totalFrom =
-      state.totalFrom === "" || state.totalFrom == null
-        ? undefined
-        : Number(state.totalFrom);
-    const totalTo =
-      state.totalTo === "" || state.totalTo == null
-        ? undefined
-        : Number(state.totalTo);
+    const filter = {};
 
-    const nextState = {
-      ...state,
-      total: [totalFrom, totalTo],
-    };
+    Object.keys(elements).forEach((key) => {
+      const el = elements[key];
+      if (!el) return;
 
-    delete nextState.totalFrom;
-    delete nextState.totalTo;
+      const isFormControl = el.tagName === "INPUT" || el.tagName === "SELECT";
+      if (!isFormControl) return;
 
-    return data.filter((row) => compare(row, nextState));
+      if (el.value) {
+      
+        filter[`filter[${el.name}]`] = el.value;
+      }
+    });
+
+    if (Object.keys(filter).length === 0) return query;
+
+  
+    return Object.assign({}, query, filter, { page: 1 });
+  };
+
+  return {
+    updateIndexes,
+    applyFiltering,
   };
 }
