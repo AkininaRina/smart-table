@@ -51,10 +51,10 @@ function render(action) {
   let state = collectState(); // состояние полей из таблицы
   let result = [...data]; // копируем для последующего изменения
   // @todo: использование
-  result = applySearching(result, state, action);
-  result = applyFiltering(result, state, action);
-  result = applySorting(result, state, action);
-  result = applyPagination(result, state, action);
+  // result = applySearching(result, state, action);
+  // result = applyFiltering(result, state, action);
+  // result = applySorting(result, state, action);
+  // result = applyPagination(result, state, action);
 
 
   sampleTable.render(result);
@@ -62,28 +62,28 @@ function render(action) {
 
 
 // @todo: инициализация
-const applySearching = initSearching("search");
+// const applySearching = initSearching("search");
 
-const applyFiltering = initFiltering(sampleTable.filter.elements, {
-  searchBySeller: indexes.sellers,
-});
+// const applyFiltering = initFiltering(sampleTable.filter.elements, {
+//   searchBySeller: indexes.sellers,
+// });
 
-const applySorting = initSorting([
-  sampleTable.header.elements.sortByDate,
-  sampleTable.header.elements.sortByTotal,
-]);
+// const applySorting = initSorting([
+//   sampleTable.header.elements.sortByDate,
+//   sampleTable.header.elements.sortByTotal,
+// ]);
 
-const applyPagination = initPagination(
-  sampleTable.pagination.elements,
-  (el, page, isCurrent) => {
-    const input = el.querySelector("input");
-    const label = el.querySelector("span");
-    input.value = page;
-    input.checked = isCurrent;
-    label.textContent = page;
-    return el;
-  },
-);
+// const applyPagination = initPagination(
+//   sampleTable.pagination.elements,
+//   (el, page, isCurrent) => {
+//     const input = el.querySelector("input");
+//     const label = el.querySelector("span");
+//     input.value = page;
+//     input.checked = isCurrent;
+//     label.textContent = page;
+//     return el;
+//   },
+// );
 
 const appRoot = document.querySelector("#app");
 appRoot.appendChild(sampleTable.container);
