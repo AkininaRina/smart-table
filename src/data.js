@@ -62,17 +62,36 @@ export function initData() {
     }
 
     // sort: "date:up|down" или "total:up|down"
-    if (query.sort) {
-      const [field, dir] = String(query.sort).split(":");
-      const sign = dir === "down" ? -1 : 1;
+if (query.sort) {
+  const [field, dir] = String(query.sort).split(":");
+  const sign = dir === "down" ? -1 : 1;
 
-      items.sort((a, b) => {
-        if (field === "date") return (a.date > b.date ? 1 : -1) * sign;
-        if (field === "total") return (a.total - b.total) * sign;
-        return 0;
-      });
+  items.sort((a, b) => {
+    if (field === "date") {
+      // 1) по дате
+      if (a.date > b.date) return 1 * sign;
+      if (a.date < b.date) return -1 * sign;
+
+      // 2) вторичная сортировка для одинаковых дат (как у тестов)
+      // берём id (receipt_id) — он уникальный и воспроизводимый
+      if (a.id > b.id) return 1;
+      if (a.id < b.id) return -1;
+      return 0;
     }
 
+    if (field === "total") {
+      if (a.total > b.total) return 1 * sign;
+      if (a.total < b.total) return -1 * sign;
+
+      // tie-breaker для одинаковых сумм
+      if (a.id > b.id) return 1;
+      if (a.id < b.id) return -1;
+      return 0;
+    }
+
+    return 0;
+  });
+}
     const total = items.length;
 
     // pagination: limit + page
