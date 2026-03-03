@@ -1,21 +1,17 @@
 import { getPages } from "../lib/utils.js";
 
-export const initPagination = (
-  { pages, fromRow, toRow, totalRows },
-  createPage
-) => {
-  // шаблон кнопки страницы
+export const initPagination = ({ pages, fromRow, toRow, totalRows }, createPage) => {
   const pageTemplate = pages.firstElementChild.cloneNode(true);
   pages.firstElementChild.remove();
 
   let pageCount = 1;
 
-  // 1) ДО запроса:
   const applyPagination = (query, state, action) => {
-    const limit = state.rowsPerPage || 10;
-    let page = state.page || 1;
+    const limitRaw = state.rowsPerPage;
+    const limit = Number.isFinite(limitRaw) ? limitRaw : 10;
 
-    // обработка кнопок
+    let page = Number.isFinite(state.page) ? state.page : 1;
+
     if (action) {
       switch (action.name) {
         case "prev":
@@ -36,9 +32,8 @@ export const initPagination = (
     return Object.assign({}, query, { limit, page });
   };
 
-  // 2) ПОСЛЕ запроса: 
   const updatePagination = (total, { page, limit }) => {
-    pageCount = Math.ceil(total / limit);
+    pageCount = Math.max(1, Math.ceil(total / limit));
 
     const visiblePages = getPages(page, pageCount, 5);
 
@@ -49,14 +44,10 @@ export const initPagination = (
       })
     );
 
-    // обновляем
     fromRow.textContent = total === 0 ? 0 : (page - 1) * limit + 1;
     toRow.textContent = Math.min(page * limit, total);
     totalRows.textContent = total;
   };
 
-  return {
-    applyPagination,
-    updatePagination,
-  };
+  return { applyPagination, updatePagination };
 };

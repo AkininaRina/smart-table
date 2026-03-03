@@ -73,10 +73,10 @@ export const sortOrderMap = {
   down: "none",
 };
 
-// маппинг name инпутов сортировки -> поле сервера
+// mapping кнопка->поле сервера
 export const sortMap = {
   sortByDate: "date",
-  sortByTotal: "total_amount",
+  sortByTotal: "total",
 };
 
 /**

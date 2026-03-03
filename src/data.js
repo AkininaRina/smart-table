@@ -1,99 +1,59 @@
-import { data as sourceData } from "./data/dataset_1.js";
-import { makeIndex } from "./lib/utils.js";
+const BASE_URL = "https://webinars.webdev.education-services.ru/sp7-api";
 
 export function initData() {
+  // кеш
+  let sellers;
+  let customers;
+  let lastResult;
+  let lastQuery;
+
+  // приводим данные в формат таблицы
+  const mapRecords = (data) =>
+    data.map((item) => ({
+      id: item.receipt_id,
+      date: item.date,
+      seller: sellers[item.seller_id],
+      customer: customers[item.customer_id],
+      total: item.total_amount,
+    }));
+
   // индексы
-  const sellers = makeIndex(
-    sourceData.sellers,
-    "id",
-    (v) => `${v.first_name} ${v.last_name}`
-  );
-  const customers = makeIndex(
-    sourceData.customers,
-    "id",
-    (v) => `${v.first_name} ${v.last_name}`
-  );
-
-  // записи в формате таблицы
-  const records = sourceData.purchase_records.map((item) => ({
-    id: item.receipt_id,
-    date: item.date,
-    seller: sellers[item.seller_id],
-    customer: customers[item.customer_id],
-    total: item.total_amount,
-  }));
-
   const getIndexes = async () => {
+    if (!sellers || !customers) {
+      const [s, c] = await Promise.all([
+        fetch(`${BASE_URL}/sellers`).then((res) => res.json()),
+        fetch(`${BASE_URL}/customers`).then((res) => res.json()),
+      ]);
+      sellers = s;
+      customers = c;
+    }
     return { sellers, customers };
   };
 
-  const getRecords = async (query = {}) => {
-    let items = [...records];
+  // записи
+  const getRecords = async (query = {}, isUpdated = false) => {
+    const qs = new URLSearchParams(query);
+    const nextQuery = qs.toString();
 
-    // search (по всем текстовым полям)
-    if (query.search) {
-      const s = String(query.search).toLowerCase();
-      items = items.filter((r) =>
-        `${r.date} ${r.seller} ${r.customer} ${r.total}`.toLowerCase().includes(s)
-      );
+    if (lastQuery === nextQuery && !isUpdated) {
+      return lastResult;
     }
 
-    // filters: filter[date], filter[customer], filter[seller], filter[totalFrom], filter[totalTo]
-    const date = query["filter[date]"];
-    const customer = query["filter[customer]"];
-    const seller = query["filter[seller]"];
-    const totalFrom = query["filter[totalFrom]"];
-    const totalTo = query["filter[totalTo]"];
-
-    if (date) items = items.filter((r) => String(r.date).includes(String(date)));
-    if (customer)
-      items = items.filter((r) =>
-        String(r.customer).toLowerCase().includes(String(customer).toLowerCase())
-      );
-    if (seller) items = items.filter((r) => r.seller === seller);
-
-    if (totalFrom) {
-      const n = Number(totalFrom);
-      if (!Number.isNaN(n)) items = items.filter((r) => r.total >= n);
-    }
-    if (totalTo) {
-      const n = Number(totalTo);
-      if (!Number.isNaN(n)) items = items.filter((r) => r.total <= n);
+    const response = await fetch(`${BASE_URL}/records?${nextQuery}`);
+    if (!response.ok) {
+      const text = await response.text();
+      throw new Error(`HTTP ${response.status}: ${text}`);
     }
 
-    // sort: "date:up|down" или "total:up|down"
-if (query.sort) {
-  const [field, dir] = String(query.sort).split(":");
-  const sign = dir === "down" ? -1 : 1;
+    const records = await response.json();
 
-  items.sort((a, b) => {
-    if (field === "date") {
-      if (a.date > b.date) return 1 * sign;
-      if (a.date < b.date) return -1 * sign;
-      return 0; // ВАЖНО: равные даты
-    }
+    lastQuery = nextQuery;
+    lastResult = {
+      total: records.total,
+      items: mapRecords(records.items),
+    };
 
-    if (field === "total") {
-      if (a.total > b.total) return 1 * sign;
-      if (a.total < b.total) return -1 * sign;
-      return 0; // ВАЖНО: равные суммы
-    }
-
-    return 0;
-  });
-}
-    const total = items.length;
-
-    // pagination: limit + page
-    const limit = Number(query.limit ?? 10);
-    const page = Number(query.page ?? 1);
-    const safeLimit = Number.isFinite(limit) && limit > 0 ? limit : 10;
-    const safePage = Number.isFinite(page) && page > 0 ? page : 1;
-
-    const start = (safePage - 1) * safeLimit;
-    const paged = items.slice(start, start + safeLimit);
-
-    return { total, items: paged };
+    return lastResult;
   };
 
   return { getIndexes, getRecords };

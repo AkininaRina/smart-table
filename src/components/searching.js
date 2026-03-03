@@ -1,10 +1,7 @@
 export function initSearching(searchField) {
   return (query, state) => {
-    const value = state[searchField];
-
-    if (!value) return query;
-
-    // при новом поиске логично возвращаться на 1 страницу
-    return Object.assign({}, query, { search: value, page: 1 });
+    return state[searchField]
+      ? Object.assign({}, query, { search: state[searchField], page: 1 })
+      : query;
   };
 }

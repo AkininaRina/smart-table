@@ -1,48 +1,41 @@
+import { sortMap, sortOrderMap } from "../lib/sort.js";
+
 export function initSorting(columns) {
-  let field = null;        // "date" | "total"
-  let uiOrder = "none";    // "none" | "up" | "down"
-
-  const toggle = (current) => {
-    if (current === "none") return "up";
-    if (current === "up") return "down";
-    return "none";
+  const setButtonValue = (btn, value) => {
+    btn.dataset.value = value;
   };
 
-  const fieldMap = {
-    date: "date",
-    total: "total",
-  };
+  const getButtonValue = (btn) => btn.dataset.value || "none";
 
-  const syncUI = () => {
+  const resetOthers = (activeBtn) => {
     columns.forEach((btn) => {
-      if (!btn) return;
-      const btnField = btn.dataset.field;
-      btn.dataset.value = btnField === field ? uiOrder : "none";
+      if (!btn || btn === activeBtn) return;
+      setButtonValue(btn, "none");
     });
   };
 
   return (query, state, action) => {
+    let nextQuery = query;
+
+    // клик по сортировке: переключаем состояние
     if (action && action.name === "sort") {
-      const clickedField = action.dataset.field;
-      if (clickedField) {
-        if (field === clickedField) uiOrder = toggle(uiOrder);
-        else {
-          field = clickedField;
-          uiOrder = "up";
-        }
-        if (uiOrder === "none") field = null;
-        syncUI();
-      }
+      const current = getButtonValue(action);
+      const next = sortOrderMap[current] || "none";
+      setButtonValue(action, next);
+      resetOthers(action);
+
+      // при смене сортировки логично сбрасывать страницу
+      nextQuery = Object.assign({}, nextQuery, { page: 1 });
     }
 
-    if (!field || uiOrder === "none") return query;
+    // вычисляем активную сортировку (уже с учётом возможного клика)
+    const active = columns.find((btn) => btn && getButtonValue(btn) !== "none");
+    if (!active) return nextQuery;
 
-    const serverField = fieldMap[field];
-    if (!serverField) return query;
+    const order = getButtonValue(active); // up/down
+    const field = sortMap[active.dataset.name]; // date/total
+    const sort = field && order !== "none" ? `${field}:${order}` : null;
 
-    return Object.assign({}, query, {
-      sort: `${serverField}:${uiOrder}`, // <-- up/down
-      page: 1,
-    });
+    return sort ? Object.assign({}, nextQuery, { sort }) : nextQuery;
   };
 }

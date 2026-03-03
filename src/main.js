@@ -5,8 +5,6 @@ import { initData } from "./data.js";
 import { processFormData } from "./lib/utils.js";
 
 import { initTable } from "./components/table.js";
-// В этом шаге компоненты поиска/сортировки/фильтра/пагинации пока не подключаем в работу.
-// Их можно оставить импортами, но не использовать:
 import { initPagination } from "./components/pagination.js";
 import { initSorting } from "./components/sorting.js";
 import { initFiltering } from "./components/filtering.js";
@@ -21,13 +19,12 @@ const sampleTable = initTable(
     before: ["search", "header", "filter"],
     after: ["pagination"],
   },
-  render,
+  render
 );
+
 const applySearching = initSearching("search");
 
-const { applyFiltering, updateIndexes } = initFiltering(
-  sampleTable.filter.elements,
-);
+const { applyFiltering, updateIndexes } = initFiltering(sampleTable.filter.elements);
 
 const applySorting = initSorting([
   sampleTable.header.elements.sortByDate,
@@ -43,30 +40,25 @@ const { applyPagination, updatePagination } = initPagination(
     input.checked = isCurrent;
     label.textContent = page;
     return el;
-  },
+  }
 );
 
-/**
- * Сбор и обработка полей из таблицы
- * @returns {Object}
- */
 function collectState() {
   const state = processFormData(new FormData(sampleTable.container));
 
-  const rowsPerPage = parseInt(state.rowsPerPage);
-  const page = parseInt(state.page ?? 1);
+  const rowsPerPageRaw = parseInt(state.rowsPerPage);
+  const pageRaw = parseInt(state.page ?? 1);
 
-  return {
-    ...state,
-    rowsPerPage,
-    page,
-  };
+  const rowsPerPage = Number.isFinite(rowsPerPageRaw) ? rowsPerPageRaw : 10;
+  const page = Number.isFinite(pageRaw) ? pageRaw : 1;
+
+  return { ...state, rowsPerPage, page };
 }
 
-/**
- * Перерисовка состояния таблицы при любых изменениях
- */
 async function render(action) {
+  // IMPORTANT: берём реальную submit-кнопку
+  action = action?.submitter ?? action;
+
   const state = collectState();
 
   let query = {};
@@ -78,14 +70,9 @@ async function render(action) {
   const { total, items } = await api.getRecords(query);
 
   updatePagination(total, query);
-
   sampleTable.render(items);
 }
 
-/**
- * Инициализация: сначала получаем индексы (продавцы/покупатели),
- * потом можно делать рендер таблицы
- */
 async function init() {
   const indexes = await api.getIndexes();
 
