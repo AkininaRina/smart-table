@@ -68,25 +68,15 @@ if (query.sort) {
 
   items.sort((a, b) => {
     if (field === "date") {
-      // 1) по дате
       if (a.date > b.date) return 1 * sign;
       if (a.date < b.date) return -1 * sign;
-
-      // 2) вторичная сортировка для одинаковых дат (как у тестов)
-      // берём id (receipt_id) — он уникальный и воспроизводимый
-      if (a.id > b.id) return 1;
-      if (a.id < b.id) return -1;
-      return 0;
+      return 0; // ВАЖНО: равные даты
     }
 
     if (field === "total") {
       if (a.total > b.total) return 1 * sign;
       if (a.total < b.total) return -1 * sign;
-
-      // tie-breaker для одинаковых сумм
-      if (a.id > b.id) return 1;
-      if (a.id < b.id) return -1;
-      return 0;
+      return 0; // ВАЖНО: равные суммы
     }
 
     return 0;
