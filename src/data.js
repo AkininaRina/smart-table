@@ -32,18 +32,22 @@ export function initData() {
     });
   }
 
-  async function getRecords(query = {}) {
-    const params = new URLSearchParams(query).toString();
+async function getRecords(query = {}) {
+  const params = new URLSearchParams(query).toString();
+  console.log(`${BASE_URL}/records?${params}`);
 
-    const response = await fetch(`${BASE_URL}/records?${params}`);
-    const records = await response.json();
+const response = await fetch(`${BASE_URL}/records?${params}`);
+if (!response.ok) {
+  const text = await response.text();
+  throw new Error(`HTTP ${response.status}: ${text}`);
+}
+const records = await response.json();
 
-    return {
-      total: records.total,
-      items: mapRecords(records.items),
-    };
-  }
-
+  return {
+    total: records.total,
+    items: mapRecords(records.items),
+  };
+}
   return {
     getIndexes,
     getRecords,

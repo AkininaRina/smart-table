@@ -1,30 +1,48 @@
-import { sortCollection, sortMap } from "../lib/sort.js";
-
 export function initSorting(columns) {
-  return (data, state, action) => {
-    let field = null;
-    let order = "none";
+  let field = null;        // "date" | "total"
+  let uiOrder = "none";    // "none" | "up" | "down"
 
+  const toggle = (current) => {
+    if (current === "none") return "up";
+    if (current === "up") return "down";
+    return "none";
+  };
+
+  const fieldMap = {
+    date: "date",
+    total: "total",
+  };
+
+  const syncUI = () => {
+    columns.forEach((btn) => {
+      if (!btn) return;
+      const btnField = btn.dataset.field;
+      btn.dataset.value = btnField === field ? uiOrder : "none";
+    });
+  };
+
+  return (query, state, action) => {
     if (action && action.name === "sort") {
-      // #3.1 — запомнить выбранный режим сортировки
-      action.dataset.value = sortMap[action.dataset.value ?? "none"];
-
-      field = action.dataset.field;
-      order = action.dataset.value;
-
-      // #3.2 — сбросить сортировки остальных колонок
-      columns.forEach((btn) => {
-        if (btn !== action) btn.dataset.value = "none";
-      });
-    } else {
-      // #3.3 — получить выбранный режим сортировки
-      const active = columns.find((btn) => btn.dataset.value !== "none");
-      if (active) {
-        field = active.dataset.field;
-        order = active.dataset.value;
+      const clickedField = action.dataset.field;
+      if (clickedField) {
+        if (field === clickedField) uiOrder = toggle(uiOrder);
+        else {
+          field = clickedField;
+          uiOrder = "up";
+        }
+        if (uiOrder === "none") field = null;
+        syncUI();
       }
     }
 
-    return sortCollection(data, field, order);
+    if (!field || uiOrder === "none") return query;
+
+    const serverField = fieldMap[field];
+    if (!serverField) return query;
+
+    return Object.assign({}, query, {
+      sort: `${serverField}:${uiOrder}`, // <-- up/down
+      page: 1,
+    });
   };
 }

@@ -8,7 +8,7 @@ import { initTable } from "./components/table.js";
 // В этом шаге компоненты поиска/сортировки/фильтра/пагинации пока не подключаем в работу.
 // Их можно оставить импортами, но не использовать:
 import { initPagination } from "./components/pagination.js";
-// import { initSorting } from "./components/sorting.js";
+import { initSorting } from "./components/sorting.js";
 import { initFiltering } from "./components/filtering.js";
 import { initSearching } from "./components/searching.js";
 
@@ -21,11 +21,18 @@ const sampleTable = initTable(
     before: ["search", "header", "filter"],
     after: ["pagination"],
   },
-  render
+  render,
 );
 const applySearching = initSearching("search");
 
-const { applyFiltering, updateIndexes } = initFiltering(sampleTable.filter.elements);
+const { applyFiltering, updateIndexes } = initFiltering(
+  sampleTable.filter.elements,
+);
+
+const applySorting = initSorting([
+  sampleTable.header.elements.sortByDate,
+  sampleTable.header.elements.sortByTotal,
+]);
 
 const { applyPagination, updatePagination } = initPagination(
   sampleTable.pagination.elements,
@@ -36,9 +43,8 @@ const { applyPagination, updatePagination } = initPagination(
     input.checked = isCurrent;
     label.textContent = page;
     return el;
-  }
+  },
 );
-
 
 /**
  * Сбор и обработка полей из таблицы
@@ -66,6 +72,7 @@ async function render(action) {
   let query = {};
   query = applySearching(query, state, action);
   query = applyFiltering(query, state, action);
+  query = applySorting(query, state, action);
   query = applyPagination(query, state, action);
 
   const { total, items } = await api.getRecords(query);
