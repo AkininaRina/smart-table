@@ -16,7 +16,7 @@ export function initFiltering(elements) {
   };
 
   const applyFiltering = (query, state, action) => {
-    // сброс фильтров (кнопки name="clear")
+    // сброс фильтров 
     if (action && action.name === "clear") {
       Object.keys(elements).forEach((key) => {
         const el = elements[key];

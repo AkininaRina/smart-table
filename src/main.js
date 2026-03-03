@@ -56,7 +56,7 @@ function collectState() {
 }
 
 async function render(action) {
-  // IMPORTANT: берём реальную submit-кнопку
+  // IMPORTANT:
   action = action?.submitter ?? action;
 
   const state = collectState();

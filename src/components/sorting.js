@@ -17,18 +17,18 @@ export function initSorting(columns) {
   return (query, state, action) => {
     let nextQuery = query;
 
-    // клик по сортировке: переключаем состояние
+    // клик по сортировке: 
     if (action && action.name === "sort") {
       const current = getButtonValue(action);
       const next = sortOrderMap[current] || "none";
       setButtonValue(action, next);
       resetOthers(action);
 
-      // при смене сортировки логично сбрасывать страницу
+    
       nextQuery = Object.assign({}, nextQuery, { page: 1 });
     }
 
-    // вычисляем активную сортировку (уже с учётом возможного клика)
+    // вычисляем активную сортировку 
     const active = columns.find((btn) => btn && getButtonValue(btn) !== "none");
     if (!active) return nextQuery;
 
